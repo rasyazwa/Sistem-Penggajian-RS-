@@ -2,11 +2,38 @@ const pageTitles = { dashboard: 'Ringkasan', employees: 'Pegawai', attendance: '
 const state = { employees: [], departments: [], payrolls: [], attendance: [] };
 const rupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 const dateFormat = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+const supabaseUrl = 'https://vagxesnkbbazirhwdiqe.supabase.co';
+const supabasePublishableKey = 'sb_publishable_UygSBbwxPHByq2aER30VVA__biR3qUW';
+const getRoutes = {
+  departments: 'departments?select=id,name&order=name.asc',
+  employees: 'employees?select=id,employee_code,full_name,position,base_salary,departments(name)&is_active=eq.true&order=full_name.asc',
+  attendance: 'attendance_records?select=id,attendance_date,status,employees(full_name,employee_code)&order=attendance_date.desc&limit=100',
+  payrolls: 'payrolls?select=id,period_start,period_end,base_salary,allowance,deductions,net_salary,employees(full_name,employee_code)&order=created_at.desc&limit=100',
+};
+async function databaseRequest(resource, options = {}) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/${resource}`, {
+    method: options.method || 'GET',
+    headers: { apikey: supabasePublishableKey, Authorization: `Bearer ${supabasePublishableKey}`, 'Content-Type': 'application/json', ...(options.method === 'POST' ? { Prefer: 'return=representation' } : {}) },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) throw new Error(data?.message || data?.details || 'Supabase menolak permintaan.');
+  return data;
+}
 const api = async (path, options = {}) => {
-  const response = await fetch(`/api/${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers }, ...(options.body ? { body: JSON.stringify(options.body) } : {}) });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || 'Permintaan tidak dapat diproses.');
-  return result;
+  if (path === 'summary') {
+    await databaseRequest('employees?select=id&is_active=eq.true&limit=1');
+    return { message: 'Data diperbarui dari basis data.' };
+  }
+  if (!options.method) return databaseRequest(getRoutes[path]);
+  const body = { ...options.body };
+  if (path === 'payrolls') {
+    const employees = await databaseRequest(`employees?select=id,base_salary&id=eq.${encodeURIComponent(body.employee_id)}&is_active=eq.true`);
+    if (!employees.length) throw new Error('Pegawai tidak ditemukan atau sudah nonaktif.');
+    body.base_salary = employees[0].base_salary;
+  }
+  return databaseRequest(path === 'attendance' ? 'attendance_records' : path, { ...options, body });
 };
 const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const formatDate = (value) => value ? dateFormat.format(new Date(`${value}T00:00:00`)) : '—';
@@ -64,7 +91,7 @@ async function refreshData() {
     populateDepartmentSelect();
   } catch {
     state.departments = [];
-    populateDepartmentSelect('Gagal memuat unit kerja. Periksa koneksi database.');
+    populateDepartmentSelect('Gagal memuat unit kerja. Periksa koneksi dan kebijakan Supabase.');
   }
   try {
     const [summary, employees, attendance, payrolls] = await Promise.all([api('summary'), api('employees'), api('attendance'), api('payrolls')]);
@@ -73,7 +100,7 @@ async function refreshData() {
     document.querySelector('#dashboard-note').textContent = summary.message || 'Data diperbarui dari basis data.';
   } catch (error) {
     document.querySelector('#dashboard-note').textContent = `Koneksi data belum tersedia: ${error.message}`;
-    [['employees-body', 5], ['attendance-body', 4], ['payroll-body', 6], ['recent-payroll-body', 4]].forEach(([id, count]) => setTableMessage(id, 'Gagal memuat data. Periksa koneksi backend dan konfigurasi Supabase.', count));
+    [['employees-body', 5], ['attendance-body', 4], ['payroll-body', 6], ['recent-payroll-body', 4]].forEach(([id, count]) => setTableMessage(id, 'Gagal memuat data. Periksa koneksi dan kebijakan Supabase.', count));
     ['metric-employees', 'metric-payroll', 'metric-attendance'].forEach((id) => { document.querySelector(`#${id}`).textContent = '—'; });
   }
 }

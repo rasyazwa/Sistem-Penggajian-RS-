@@ -5,14 +5,15 @@ Aplikasi web penggajian rumah sakit sederhana. Frontend HTML, CSS, dan JavaScrip
 ## Struktur
 
 ```text
-public/
+frontend/
   index.html
   styles.css
   app.js
 backend/
   app.js
   schema.sql
-server.js
+.github/workflows/
+  deploy-pages.yml
 ```
 
 ## ERD
@@ -55,28 +56,16 @@ erDiagram
 
 `net_salary` dihitung otomatis oleh PostgreSQL: gaji pokok + tunjangan - potongan. Setiap pegawai hanya memiliki satu catatan kehadiran per tanggal dan satu penggajian untuk periode yang sama.
 
-## Menjalankan
+## Setup Supabase
 
-1. Di Supabase **SQL Editor**, jalankan isi `backend/schema.sql`.
-2. Siapkan Node.js 18 atau lebih baru. Ambil **Project URL** dan **service_role key** dari pengaturan API Supabase. Jangan menaruh service role key di frontend atau membagikannya ke publik.
-3. Buka PowerShell dari folder proyek, lalu set konfigurasi untuk sesi terminal saat ini:
+Jalankan `backend/schema.sql` di Supabase **SQL Editor**. Jika skema lama sudah pernah dijalankan, jalankan file terbaru ini lagi agar kebijakan akses demo ikut diterapkan.
 
-   ```powershell
-   $env:SUPABASE_URL = "https://PROJECT_REF.supabase.co"
-   $env:SUPABASE_SERVICE_ROLE_KEY = "SERVICE_ROLE_KEY"
-   node backend/app.js
-   ```
+Frontend memakai URL proyek dan publishable key di `frontend/app.js`. Publishable key memang dapat dilihat publik; jangan pernah menggantinya dengan `service_role` atau secret key.
 
-4. Buka `http://localhost:3000`.
+## Deploy ke GitHub Pages
 
-Server menyajikan frontend dan API pada origin yang sama. Jika koneksi belum tersedia, pastikan SQL sudah dijalankan dan variabel Supabase terisi. API menyediakan daftar/tambah pegawai, catatan kehadiran, serta pembuatan dan daftar penggajian.
+GitHub Pages menerbitkan isi `frontend/` sebagai situs statis. `backend/app.js` tetap ada di folder backend, tetapi GitHub Pages tidak menjalankannya; frontend terbitan mengakses Supabase secara langsung. Push perubahan ke branch `main` untuk menjalankan workflow GitHub Actions.
 
-> Ini fondasi tugas/demo, bukan sistem payroll produksi. Sebelum dipakai dengan data pegawai sungguhan, tambahkan autentikasi, otorisasi per peran, audit log, dan tinjauan aturan payroll yang berlaku.
+Aktifkan GitHub Pages satu kali di repository: **Settings > Pages > Build and deployment > Source > GitHub Actions**. Setelah workflow selesai, URL Pages akan tercantum di tab **Actions** atau **Settings > Pages**.
 
-## Deploy ke Vercel
-
-Hubungkan repository GitHub ke Vercel dan pastikan **Root Directory** menunjuk ke folder proyek ini (kosongkan jika repository langsung berisi `server.js`). Vercel mengenali `server.js` sebagai server Node; aset frontend berada di `public/` dan API tetap dilayani oleh backend.
-
-Di pengaturan proyek Vercel, gunakan **Other** sebagai Framework Preset dan tambahkan `SUPABASE_URL` serta `SUPABASE_SERVICE_ROLE_KEY` pada Environment Variables. Jangan menambahkan secret ke file proyek. Deploy ulang setelah menyimpan variabel.
-
-> **Keamanan:** aplikasi saat ini belum memiliki login atau otorisasi. Gunakan hanya data dummy sampai akses API dilindungi.
+> **Penting untuk demo saja:** kebijakan Supabase dalam schema ini mengizinkan siapa pun membaca dan menambahkan data. Jangan masukkan data pegawai sungguhan. Jangan deploy versi ini untuk produksi tanpa autentikasi dan kebijakan akses per pengguna.

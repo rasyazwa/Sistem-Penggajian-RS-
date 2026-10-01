@@ -58,6 +58,49 @@ create policy departments_read
   to anon, authenticated
   using (true);
 
+grant select, insert on public.employees to anon;
+grant select, insert on public.attendance_records to anon;
+grant select, insert on public.payrolls to anon;
+
+drop policy if exists employees_demo_read on public.employees;
+create policy employees_demo_read
+  on public.employees
+  for select
+  to anon
+  using (true);
+drop policy if exists employees_demo_insert on public.employees;
+create policy employees_demo_insert
+  on public.employees
+  for insert
+  to anon
+  with check (true);
+
+drop policy if exists attendance_demo_read on public.attendance_records;
+create policy attendance_demo_read
+  on public.attendance_records
+  for select
+  to anon
+  using (true);
+drop policy if exists attendance_demo_insert on public.attendance_records;
+create policy attendance_demo_insert
+  on public.attendance_records
+  for insert
+  to anon
+  with check (true);
+
+drop policy if exists payroll_demo_read on public.payrolls;
+create policy payroll_demo_read
+  on public.payrolls
+  for select
+  to anon
+  using (true);
+drop policy if exists payroll_demo_insert on public.payrolls;
+create policy payroll_demo_insert
+  on public.payrolls
+  for insert
+  to anon
+  with check (true);
+
 insert into public.departments (name) values
   ('Keperawatan'), ('Medis'), ('Farmasi'), ('Administrasi'), ('Laboratorium')
 on conflict (name) do nothing;
