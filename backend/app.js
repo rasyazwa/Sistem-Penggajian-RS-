@@ -80,4 +80,6 @@ const server = http.createServer(async (request, response) => {
     sendJson(response, error.status || 500, { error: error.message || 'Terjadi kesalahan pada server.' });
   }
 });
-server.listen(port, () => console.log(`Ruang Gaji tersedia di http://localhost:${port}`));
+if (require.main === module) server.listen(port, () => console.log(`Ruang Gaji tersedia di http://localhost:${port}`));
+
+module.exports = { server };
