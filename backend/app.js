@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const port = Number(process.env.PORT || 3000);
-const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseUrl = (process.env.SUPABASE_URL || 'https://vagxesnkbbazirhwdiqe.supabase.co/').replace(/\/$/, '');
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'sb_publishable_UygSBbwxPHByq2aER30VVA__biR3qUW';
 const frontendDirectory = path.resolve(__dirname, '../frontend');
 const staticFiles = { '/': ['index.html', 'text/html; charset=utf-8'], '/styles.css': ['styles.css', 'text/css; charset=utf-8'], '/app.js': ['app.js', 'text/javascript; charset=utf-8'] };
 
